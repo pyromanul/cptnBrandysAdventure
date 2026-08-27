@@ -252,7 +252,7 @@ button.secondary {
   height: 72%;
   transform: translate(-50%, -50%) rotate(0deg);
   transform-origin: 50% 50%;
-  transition: transform 110ms linear;
+  transition: transform 160ms ease-out;
   will-change: transform;
   filter: drop-shadow(0 3px 3px rgba(0,0,0,.55));
 }

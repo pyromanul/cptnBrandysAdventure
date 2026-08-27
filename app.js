@@ -30,6 +30,9 @@
     gpsCourseUpdatedAt: 0,
     nativeCourse: null,
     nativeCourseUpdatedAt: 0,
+    smoothedDeviceHeading: null,
+    displayedNeedleAngle: null,
+    lastAbsoluteOrientationAt: 0,
     watchId: null,
     started: false,
   };
@@ -63,6 +66,17 @@
   function toDeg(rad) { return rad * 180 / Math.PI; }
   function normalize360(deg) { return (deg % 360 + 360) % 360; }
   function normalize180(deg) { return ((deg + 540) % 360) - 180; }
+
+  function smoothAngle(previous, next, factor = 0.18) {
+    if (previous === null || !Number.isFinite(previous)) return normalize360(next);
+    const delta = normalize180(next - previous);
+    return normalize360(previous + factor * delta);
+  }
+
+  function unwrapAngle(previous, nextWrapped) {
+    if (previous === null || !Number.isFinite(previous)) return nextWrapped;
+    return previous + normalize180(nextWrapped - normalize180(previous));
+  }
 
   function haversineMeters(a, b) {
     const R = 6371008.8;
@@ -117,9 +131,23 @@
   }
 
   function onOrientation(event) {
+    const isWebkitCompass = typeof event.webkitCompassHeading === "number";
+    const isAbsolute = event.type === "deviceorientationabsolute" || event.absolute === true || isWebkitCompass;
+
+    // Ignore relative deviceorientation data. On some Android browsers both
+    // relative and absolute events fire; mixing them makes the needle jump.
+    if (!isAbsolute) return;
+
+    if (event.type === "deviceorientationabsolute" || isWebkitCompass) {
+      state.lastAbsoluteOrientationAt = performance.now();
+    } else if (performance.now() - state.lastAbsoluteOrientationAt < 1000) {
+      return;
+    }
+
     const heading = getScreenCorrectedHeading(event);
     if (heading !== null) {
-      state.deviceHeading = heading;
+      state.smoothedDeviceHeading = smoothAngle(state.smoothedDeviceHeading, heading);
+      state.deviceHeading = state.smoothedDeviceHeading;
       updateDisplay();
     }
   }
@@ -219,11 +247,13 @@
 
     if (headingInfo) {
       const relative = normalize180(bearing - headingInfo.heading);
-      ui.arrow.style.transform = `translate(-50%, -50%) rotate(${relative}deg)`;
+      state.displayedNeedleAngle = unwrapAngle(state.displayedNeedleAngle, relative);
+      ui.arrow.style.transform = `translate(-50%, -50%) rotate(${state.displayedNeedleAngle}deg)`;
       ui.status.textContent = headingInfo.source === "compass"
         ? `GPS accuracy ±${Math.round(state.position.accuracy)} m`
         : `Using walking direction · GPS accuracy ±${Math.round(state.position.accuracy)} m`;
     } else {
+      state.displayedNeedleAngle = 0;
       ui.arrow.style.transform = "translate(-50%, -50%) rotate(0deg)";
       ui.status.textContent = "Move a few metres or enable the compass.";
     }
