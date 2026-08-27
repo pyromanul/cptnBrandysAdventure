@@ -43,11 +43,21 @@ For testing on an actual phone, deploy it over HTTPS. GitHub Pages, Cloudflare P
 ## Game setup
 
 1. Deploy this directory to an HTTPS static host.
-2. Open `generator.html` and enter your deployed `index.html` URL.
-3. Enter a waypoint latitude and longitude.
-4. Generate the target URL.
+2. Open `generator.html`. When hosted beside `index.html`, it automatically uses the correct compass-app URL.
+3. Set the waypoint using **Use my current location**, paste decimal coordinates, paste DMS coordinates, paste a common full Google Maps URL, or edit latitude/longitude manually.
+4. Generate/copy the target URL.
 5. Encode that URL as a QR code using any QR-code generator.
 6. Print the QR code and place it at the relevant game station.
+
+Examples accepted by the generator:
+
+```text
+47.0707, 15.4395
+47°04'14.5"N 15°26'22.2"E
+https://www.google.com/maps/.../@47.0707,15.4395,17z
+```
+
+Google Maps short links such as `maps.app.goo.gl/...` do not contain the coordinates themselves and therefore cannot be decoded locally by this static app. Open the short link first and paste the resulting full Google Maps URL, or paste the coordinates shown by Maps.
 
 Scanning the QR code with the phone camera opens the waypoint directly.
 
@@ -68,4 +78,7 @@ GPS accuracy outdoors is commonly several metres. Consequently, the default "Fou
 - `index.html` — game interface
 - `styles.css` — minimal full-screen UI
 - `app.js` — GPS, bearing, distance, compass and fallback logic
-- `generator.html` — helper for generating waypoint URLs
+- `generator.html` — waypoint generator UI
+- `generator.js` — generator controls and geolocation
+- `generator-lib.js` — coordinate and Google Maps URL parsing
+- `compass-mark.svg` — local compass artwork

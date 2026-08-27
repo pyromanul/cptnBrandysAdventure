@@ -2,9 +2,8 @@
   "use strict";
 
   const FOUND_RADIUS_M = 6;
-  const GPS_COURSE_MIN_DISTANCE_M = 5;
-  const GPS_COURSE_MAX_AGE_MS = 15000;
-  const HEADING_SMOOTHING = 0.22;
+  const GPS_COURSE_MIN_DISTANCE_M = 4;
+  const GPS_COURSE_MAX_AGE_MS = 12000;
 
   const ui = {
     startScreen: document.getElementById("startScreen"),
@@ -24,45 +23,37 @@
   const state = {
     target: null,
     position: null,
-    courseAnchor: null,
+    previousPosition: null,
     deviceHeading: null,
     gpsCourse: null,
     gpsCourseUpdatedAt: 0,
     watchId: null,
-    orientationListening: false,
-    started: false,
   };
-
-  function parseCoordinate(value) {
-    if (value === null || value === undefined || String(value).trim() === "") return null;
-    const n = Number(value);
-    return Number.isFinite(n) ? n : null;
-  }
 
   function parseTarget() {
     const params = new URLSearchParams(location.search);
-    let lat = parseCoordinate(params.get("lat"));
-    let lon = parseCoordinate(params.get("lon"));
+    let lat = Number(params.get("lat"));
+    let lon = Number(params.get("lon"));
 
-    if (lat === null || lon === null) {
-      const fragment = decodeURIComponent(location.hash.replace(/^#/, "").trim());
-      const match = fragment.match(/^\s*(-?(?:\d+(?:\.\d*)?|\.\d+))\s*,\s*(-?(?:\d+(?:\.\d*)?|\.\d+))\s*$/);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+      const fragment = location.hash.replace(/^#/, "").trim();
+      const match = fragment.match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
       if (match) {
-        lat = parseCoordinate(match[1]);
-        lon = parseCoordinate(match[2]);
+        lat = Number(match[1]);
+        lon = Number(match[2]);
       }
     }
 
-    if (lat === null || lon === null || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
       return null;
     }
     return { lat, lon };
   }
 
-  const toRad = deg => deg * Math.PI / 180;
-  const toDeg = rad => rad * 180 / Math.PI;
-  const normalize360 = deg => (deg % 360 + 360) % 360;
-  const normalize180 = deg => ((deg + 540) % 360) - 180;
+  function toRad(deg) { return deg * Math.PI / 180; }
+  function toDeg(rad) { return rad * 180 / Math.PI; }
+  function normalize360(deg) { return (deg % 360 + 360) % 360; }
+  function normalize180(deg) { return ((deg + 540) % 360) - 180; }
 
   function haversineMeters(a, b) {
     const R = 6371008.8;
@@ -72,8 +63,7 @@
     const dLambda = toRad(b.lon - a.lon);
     const h = Math.sin(dPhi / 2) ** 2 +
       Math.cos(phi1) * Math.cos(phi2) * Math.sin(dLambda / 2) ** 2;
-    const clampedH = Math.min(1, Math.max(0, h));
-    return 2 * R * Math.atan2(Math.sqrt(clampedH), Math.sqrt(1 - clampedH));
+    return 2 * R * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
   }
 
   function initialBearingDeg(a, b) {
@@ -87,7 +77,6 @@
   }
 
   function formatDistance(meters) {
-    if (!Number.isFinite(meters)) return "—";
     if (meters < 1000) return `${Math.round(meters)} m`;
     if (meters < 10000) return `${(meters / 1000).toFixed(2)} km`;
     return `${(meters / 1000).toFixed(1)} km`;
@@ -103,86 +92,54 @@
     showOnly(ui.errorScreen);
   }
 
-  function screenAngle() {
-    if (screen.orientation && Number.isFinite(screen.orientation.angle)) return screen.orientation.angle;
-    if (Number.isFinite(window.orientation)) return window.orientation;
-    return 0;
-  }
-
   function getScreenCorrectedHeading(event) {
-    if (Number.isFinite(event.webkitCompassHeading)) {
-      if (Number.isFinite(event.webkitCompassAccuracy) && event.webkitCompassAccuracy < 0) return null;
+    // iOS Safari provides a true compass heading directly.
+    if (typeof event.webkitCompassHeading === "number") {
       return normalize360(event.webkitCompassHeading);
     }
 
-    // For non-iOS browsers, only trust alpha as a compass heading when the
-    // orientation is explicitly absolute (or from deviceorientationabsolute).
-    if (Number.isFinite(event.alpha) && (event.absolute === true || event.type === "deviceorientationabsolute")) {
-      return normalize360(360 - event.alpha + screenAngle());
+    // On browsers exposing absolute alpha, alpha is rotation around the z axis.
+    // Convert it to compass convention and correct for screen orientation.
+    if (typeof event.alpha === "number") {
+      const screenAngle = screen.orientation?.angle ?? window.orientation ?? 0;
+      return normalize360(360 - event.alpha + screenAngle);
     }
     return null;
-  }
-
-  function smoothHeading(previous, next) {
-    if (previous === null) return next;
-    return normalize360(previous + normalize180(next - previous) * HEADING_SMOOTHING);
   }
 
   function onOrientation(event) {
     const heading = getScreenCorrectedHeading(event);
     if (heading !== null) {
-      state.deviceHeading = smoothHeading(state.deviceHeading, heading);
+      state.deviceHeading = heading;
       updateDisplay();
     }
   }
 
-  function attachOrientationListeners() {
-    if (state.orientationListening) return;
-    window.addEventListener("deviceorientationabsolute", onOrientation, true);
-    window.addEventListener("deviceorientation", onOrientation, true);
-    state.orientationListening = true;
-  }
-
   async function enableCompass() {
-    if (typeof DeviceOrientationEvent === "undefined") {
-      ui.status.textContent = "Compass unavailable; walk a few metres to establish direction.";
-      return false;
-    }
-
     try {
-      if (typeof DeviceOrientationEvent.requestPermission === "function") {
+      if (typeof DeviceOrientationEvent !== "undefined" &&
+          typeof DeviceOrientationEvent.requestPermission === "function") {
         const permission = await DeviceOrientationEvent.requestPermission();
-        if (permission !== "granted") {
-          ui.status.textContent = "Compass permission denied; walk a few metres to establish direction.";
-          return false;
-        }
+        if (permission !== "granted") throw new Error("Motion permission was not granted.");
       }
-      attachOrientationListeners();
-      return true;
-    } catch {
-      ui.status.textContent = "Compass unavailable; walk a few metres to establish direction.";
-      return false;
+
+      window.removeEventListener("deviceorientationabsolute", onOrientation);
+      window.removeEventListener("deviceorientation", onOrientation);
+      window.addEventListener("deviceorientationabsolute", onOrientation, true);
+      window.addEventListener("deviceorientation", onOrientation, true);
+    } catch (err) {
+      ui.status.textContent = "Compass unavailable; direction will use walking direction when possible.";
     }
   }
 
-  function updateGpsCourse(newPos, nativeHeading) {
-    if (Number.isFinite(nativeHeading) && nativeHeading >= 0 && nativeHeading <= 360) {
-      state.gpsCourse = normalize360(nativeHeading);
-      state.gpsCourseUpdatedAt = Date.now();
-      state.courseAnchor = newPos;
-      return;
-    }
-
-    if (!state.courseAnchor) {
-      state.courseAnchor = newPos;
-      return;
-    }
-
-    const moved = haversineMeters(state.courseAnchor, newPos);
+  function updateGpsCourse(newPos) {
+    const prev = state.previousPosition;
+    if (!prev) return;
+    const moved = haversineMeters(prev, newPos);
     if (moved >= GPS_COURSE_MIN_DISTANCE_M) {
-      state.gpsCourse = initialBearingDeg(state.courseAnchor, newPos);
+      state.gpsCourse = initialBearingDeg(prev, newPos);
       state.gpsCourseUpdatedAt = Date.now();
-      state.courseAnchor = newPos;
+      state.previousPosition = newPos;
     }
   }
 
@@ -190,26 +147,22 @@
     const next = {
       lat: position.coords.latitude,
       lon: position.coords.longitude,
-      accuracy: Number.isFinite(position.coords.accuracy) ? position.coords.accuracy : null,
+      accuracy: position.coords.accuracy,
     };
 
-    updateGpsCourse(next, position.coords.heading);
+    if (!state.previousPosition) state.previousPosition = next;
+    updateGpsCourse(next);
     state.position = next;
     updateDisplay();
   }
 
   function onPositionError(error) {
-    if (error.code === 1) {
-      fail("Location permission was denied. Allow location access in your browser settings and reload the page.");
-      stopWatching();
-      return;
-    }
-
-    // POSITION_UNAVAILABLE and TIMEOUT are often transient outdoors/indoors.
-    showOnly(ui.navScreen);
-    ui.status.textContent = error.code === 3
-      ? "Still waiting for a GPS fix…"
-      : "Position temporarily unavailable…";
+    const messages = {
+      1: "Location permission was denied.",
+      2: "Your position is currently unavailable.",
+      3: "Location request timed out.",
+    };
+    fail(messages[error.code] || "Could not obtain your position.");
   }
 
   function bestHeading() {
@@ -235,42 +188,28 @@
     showOnly(ui.navScreen);
     const bearing = initialBearingDeg(state.position, state.target);
     const headingInfo = bestHeading();
-    const accuracyText = state.position.accuracy === null ? "" : ` · GPS ±${Math.round(state.position.accuracy)} m`;
 
     if (headingInfo) {
       const relative = normalize180(bearing - headingInfo.heading);
       ui.arrow.style.transform = `rotate(${relative}deg)`;
-      ui.arrow.classList.remove("inactive");
       ui.status.textContent = headingInfo.source === "compass"
-        ? `Compass active${accuracyText}`
-        : `Using walking direction${accuracyText}`;
+        ? `GPS accuracy ±${Math.round(state.position.accuracy)} m`
+        : `Using walking direction · GPS accuracy ±${Math.round(state.position.accuracy)} m`;
     } else {
       ui.arrow.style.transform = "rotate(0deg)";
-      ui.arrow.classList.add("inactive");
-      ui.status.textContent = `Move a few metres or enable the compass${accuracyText}`;
-    }
-  }
-
-  function stopWatching() {
-    if (state.watchId !== null && navigator.geolocation) {
-      navigator.geolocation.clearWatch(state.watchId);
-      state.watchId = null;
+      ui.status.textContent = "Move a few metres or enable the compass.";
     }
   }
 
   async function start() {
-    if (!state.target || state.started) return;
+    if (!state.target) return;
     if (!navigator.geolocation) {
       fail("This browser does not support geolocation.");
       return;
     }
 
-    state.started = true;
-    ui.startButton.disabled = true;
     showOnly(ui.navScreen);
     ui.status.textContent = "Requesting permissions…";
-
-    // iOS requires the motion permission request to originate from this tap.
     await enableCompass();
 
     state.watchId = navigator.geolocation.watchPosition(
@@ -278,16 +217,11 @@
       onPositionError,
       {
         enableHighAccuracy: true,
-        maximumAge: 2000,
-        timeout: 20000,
+        maximumAge: 1000,
+        timeout: 15000,
       }
     );
   }
-
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden && state.started) updateDisplay();
-  });
-  window.addEventListener("pagehide", stopWatching);
 
   state.target = parseTarget();
   if (!state.target) {

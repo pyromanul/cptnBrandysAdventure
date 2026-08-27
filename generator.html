@@ -2,44 +2,79 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Waypoint Link Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#111820" />
+  <title>Captain Brandy's Waypoint Generator</title>
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 48px auto; padding: 0 20px; }
-    label { display:block; margin-top:18px; font-weight:700; }
-    input { width:100%; box-sizing:border-box; padding:10px; font:inherit; }
-    button { margin-top:20px; padding:10px 16px; font:inherit; cursor:pointer; }
-    pre { white-space:pre-wrap; overflow-wrap:anywhere; padding:14px; background:#eee; }
+    :root { color-scheme: dark; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #0d141a; color: #f4ead4; }
+    main { width: min(100% - 32px, 720px); margin: 0 auto; padding: 40px 0 64px; }
+    .brand { color: #c8a45c; text-transform: uppercase; letter-spacing: .13em; font-size: .78rem; font-weight: 800; }
+    h1 { margin: 8px 0 8px; font-family: Georgia, serif; font-size: clamp(2rem, 8vw, 3.6rem); line-height: 1; }
+    .intro { color: #b9b2a6; margin-bottom: 30px; }
+    .card { border: 1px solid #5c4b2c; border-radius: 18px; padding: 20px; margin: 18px 0; background: #151d23; }
+    h2 { margin: 0 0 14px; font-size: 1.05rem; color: #e8d6ad; }
+    label { display: block; margin: 14px 0 6px; font-weight: 700; font-size: .92rem; }
+    input, textarea { width: 100%; border: 1px solid #475159; border-radius: 10px; padding: 12px; font: inherit; font-size: 16px; background: #0b1116; color: #fff; }
+    textarea { min-height: 108px; resize: vertical; }
+    .coords { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    button, .button-link { min-height: 44px; border: 0; border-radius: 999px; padding: 11px 18px; font: inherit; font-weight: 800; cursor: pointer; background: #d4b36d; color: #17130b; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+    button.secondary, .button-link.secondary { background: transparent; color: #d9c8a5; border: 1px solid #68583a; }
+    button:disabled { opacity: .45; cursor: default; }
+    #message { min-height: 1.4em; margin: 12px 0 0; color: #aaa; }
+    #message[data-kind="ok"] { color: #bcd8b0; }
+    #message[data-kind="error"] { color: #efb0a8; }
+    pre { margin: 12px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; padding: 14px; border-radius: 10px; background: #090e12; border: 1px solid #303b43; color: #eee; }
+    .examples { color: #aaa; font-size: .86rem; line-height: 1.55; margin: 8px 0 0; }
+    @media (max-width: 480px) { .coords { grid-template-columns: 1fr; } main { padding-top: 26px; } }
   </style>
 </head>
 <body>
-  <h1>Waypoint Link Generator</h1>
-  <p>Enter the target coordinates. Put the generated URL into any QR-code generator.</p>
+  <main>
+    <div class="brand">Captain Brandy's Adventure</div>
+    <h1>Waypoint Generator</h1>
+    <p class="intro">Choose the treasure location, then use the generated link as the QR-code destination.</p>
 
-  <label for="base">Base URL</label>
-  <input id="base" value="https://example.com/index.html" />
+    <section class="card">
+      <h2>1. Pick the target</h2>
+      <button id="useLocation" type="button">Use my current location</button>
 
-  <label for="lat">Latitude</label>
-  <input id="lat" type="number" step="any" placeholder="47.0707" />
+      <label for="source">Or paste coordinates / Google Maps location</label>
+      <textarea id="source" placeholder="47.0707, 15.4395\n47°04'14.5\"N 15°26'22.2\"E\nhttps://www.google.com/maps/.../@47.0707,15.4395,17z"></textarea>
+      <p class="examples">Accepted: decimal degrees, degrees/minutes/seconds (DMS), and common full Google Maps URLs. Google Maps short links must first be opened so the full URL or coordinates become available.</p>
+      <div class="actions">
+        <button id="parse" class="secondary" type="button">Read pasted location</button>
+      </div>
 
-  <label for="lon">Longitude</label>
-  <input id="lon" type="number" step="any" placeholder="15.4395" />
+      <div class="coords">
+        <div>
+          <label for="lat">Latitude</label>
+          <input id="lat" type="number" step="any" min="-90" max="90" placeholder="47.0707" />
+        </div>
+        <div>
+          <label for="lon">Longitude</label>
+          <input id="lon" type="number" step="any" min="-180" max="180" placeholder="15.4395" />
+        </div>
+      </div>
+      <p id="message" aria-live="polite"></p>
+    </section>
 
-  <button id="make">Generate link</button>
-  <pre id="result">—</pre>
+    <section class="card">
+      <h2>2. Generate game link</h2>
+      <label for="base">Compass app URL</label>
+      <input id="base" inputmode="url" />
+      <div class="actions">
+        <button id="make" type="button">Generate link</button>
+        <button id="copy" class="secondary" type="button" disabled>Copy link</button>
+        <a id="openTarget" class="button-link secondary" href="#" target="_blank" rel="noopener" hidden>Test target</a>
+      </div>
+      <pre id="result">—</pre>
+    </section>
+  </main>
 
-  <script>
-    document.getElementById('make').addEventListener('click', () => {
-      const base = document.getElementById('base').value.trim();
-      const lat = Number(document.getElementById('lat').value);
-      const lon = Number(document.getElementById('lon').value);
-      const out = document.getElementById('result');
-      if (!base || !Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
-        out.textContent = 'Please enter a valid base URL and coordinates.';
-        return;
-      }
-      out.textContent = `${base}#${lat},${lon}`;
-    });
-  </script>
+  <script src="generator-lib.js"></script>
+  <script src="generator.js"></script>
 </body>
 </html>
