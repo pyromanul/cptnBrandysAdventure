@@ -16,6 +16,7 @@
     arrow: document.getElementById("arrow"),
     distance: document.getElementById("distance"),
     status: document.getElementById("status"),
+    guidance: document.getElementById("guidance"),
     foundDistance: document.getElementById("foundDistance"),
     errorMessage: document.getElementById("errorMessage"),
   };
@@ -27,16 +28,24 @@
     deviceHeading: null,
     gpsCourse: null,
     gpsCourseUpdatedAt: 0,
+    nativeCourse: null,
+    nativeCourseUpdatedAt: 0,
     watchId: null,
+    started: false,
   };
 
   function parseTarget() {
     const params = new URLSearchParams(location.search);
-    let lat = Number(params.get("lat"));
-    let lon = Number(params.get("lon"));
+    let lat = null;
+    let lon = null;
+
+    if (params.has("lat") && params.has("lon")) {
+      lat = Number(params.get("lat"));
+      lon = Number(params.get("lon"));
+    }
 
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
-      const fragment = location.hash.replace(/^#/, "").trim();
+      const fragment = decodeURIComponent(location.hash.replace(/^#/, "").trim());
       const match = fragment.match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
       if (match) {
         lat = Number(match[1]);
@@ -150,6 +159,11 @@
       accuracy: position.coords.accuracy,
     };
 
+    if (Number.isFinite(position.coords.heading) && (position.coords.speed === null || position.coords.speed > 0.5)) {
+      state.nativeCourse = normalize360(position.coords.heading);
+      state.nativeCourseUpdatedAt = Date.now();
+    }
+
     if (!state.previousPosition) state.previousPosition = next;
     updateGpsCourse(next);
     state.position = next;
@@ -157,20 +171,33 @@
   }
 
   function onPositionError(error) {
-    const messages = {
-      1: "Location permission was denied.",
-      2: "Your position is currently unavailable.",
-      3: "Location request timed out.",
-    };
-    fail(messages[error.code] || "Could not obtain your position.");
+    if (error.code === 1) {
+      fail("Location permission was denied.");
+      return;
+    }
+    // A GPS timeout or temporary loss of position is common outdoors and should
+    // not terminate an already-running adventure.
+    ui.status.textContent = error.code === 3
+      ? "Waiting for a fresh GPS fix…"
+      : "GPS signal temporarily unavailable…";
   }
 
   function bestHeading() {
     if (state.deviceHeading !== null) return { heading: state.deviceHeading, source: "compass" };
+    if (state.nativeCourse !== null && Date.now() - state.nativeCourseUpdatedAt < GPS_COURSE_MAX_AGE_MS) {
+      return { heading: state.nativeCourse, source: "movement" };
+    }
     if (state.gpsCourse !== null && Date.now() - state.gpsCourseUpdatedAt < GPS_COURSE_MAX_AGE_MS) {
       return { heading: state.gpsCourse, source: "movement" };
     }
     return null;
+  }
+
+  function updateGuidance(distance) {
+    if (!ui.guidance) return;
+    if (distance <= 20) ui.guidance.textContent = "Almost there!";
+    else if (distance <= 75) ui.guidance.textContent = "Getting close, Captain!";
+    else ui.guidance.textContent = "Keep going, Captain!";
   }
 
   function updateDisplay() {
@@ -178,6 +205,7 @@
 
     const distance = haversineMeters(state.position, state.target);
     ui.distance.textContent = formatDistance(distance);
+    updateGuidance(distance);
 
     if (distance <= FOUND_RADIUS_M) {
       ui.foundDistance.textContent = formatDistance(distance);
@@ -191,18 +219,20 @@
 
     if (headingInfo) {
       const relative = normalize180(bearing - headingInfo.heading);
-      ui.arrow.style.transform = `rotate(${relative}deg)`;
+      ui.arrow.style.transform = `translate(-50%, -50%) rotate(${relative}deg)`;
       ui.status.textContent = headingInfo.source === "compass"
         ? `GPS accuracy ±${Math.round(state.position.accuracy)} m`
         : `Using walking direction · GPS accuracy ±${Math.round(state.position.accuracy)} m`;
     } else {
-      ui.arrow.style.transform = "rotate(0deg)";
+      ui.arrow.style.transform = "translate(-50%, -50%) rotate(0deg)";
       ui.status.textContent = "Move a few metres or enable the compass.";
     }
   }
 
   async function start() {
-    if (!state.target) return;
+    if (!state.target || state.started) return;
+    state.started = true;
+    ui.startButton.disabled = true;
     if (!navigator.geolocation) {
       fail("This browser does not support geolocation.");
       return;
@@ -232,4 +262,10 @@
   ui.targetSummary.textContent = "Target loaded";
   ui.startButton.addEventListener("click", start);
   ui.recalibrateButton.addEventListener("click", enableCompass);
+
+  window.addEventListener("pagehide", () => {
+    if (state.watchId !== null) navigator.geolocation.clearWatch(state.watchId);
+    window.removeEventListener("deviceorientationabsolute", onOrientation, true);
+    window.removeEventListener("deviceorientation", onOrientation, true);
+  });
 })();

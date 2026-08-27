@@ -10,10 +10,11 @@
 <body>
   <main class="app" aria-live="polite">
     <section id="startScreen" class="screen start-screen">
-      <div class="parchment-card">
-        <div class="eyebrow">Captain Brandy's Compass</div>
+      <div class="parchment-card start-card">
+        <div class="eyebrow">Captain Brandy's</div>
+        <h1>Compass</h1>
         <img class="compass-mark" src="compass-mark.svg" alt="" aria-hidden="true" />
-        <h1>What do you seek?</h1>
+        <p class="tagline">Not all treasures are marked on maps.</p>
         <p id="targetSummary" class="muted"></p>
         <button id="startButton" type="button">Follow the compass</button>
         <p class="hint">Location and motion permissions are required.</p>
@@ -21,27 +22,58 @@
     </section>
 
     <section id="navScreen" class="screen hidden nav-screen">
-      <div class="small-title">Captain Brandy's Compass</div>
-      <div id="arrowWrap" class="arrow-wrap" aria-label="Direction to target">
-        <img class="compass-ghost" src="compass-mark.svg" alt="" aria-hidden="true" />
-        <div id="arrow" class="arrow" aria-hidden="true">▲</div>
+      <div class="distance-card" aria-live="polite">
+        <div class="distance-label">Your desire lies</div>
+        <div id="distance" class="distance">—</div>
+        <div class="distance-ornament" aria-hidden="true">← ✦ →</div>
       </div>
-      <div id="distance" class="distance">—</div>
-      <div class="rule"><span>✦</span></div>
+
+      <div class="compass-shell" aria-label="Direction to target">
+        <div class="compass-bezel">
+          <div class="compass-face">
+            <div class="ticks" aria-hidden="true"></div>
+            <div class="cardinal north">N</div>
+            <div class="cardinal east">E</div>
+            <div class="cardinal south">S</div>
+            <div class="cardinal west">W</div>
+            <div class="rose" aria-hidden="true"></div>
+
+            <div id="arrow" class="needle" aria-hidden="true">
+              <div class="needle-half needle-red"></div>
+              <div class="needle-half needle-white"></div>
+              <div class="needle-spine"></div>
+              <div class="needle-pivot"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="guidance" class="guidance">Keep going, Captain!</div>
+
+      <div class="treasure-strip" aria-hidden="true">
+        <span class="ship">⛵</span>
+        <span class="route">· · · · · · · · ·</span>
+        <span class="xmark">×</span>
+      </div>
+
       <div id="status" class="status">Acquiring position…</div>
       <button id="recalibrateButton" class="secondary" type="button">Re-enable compass</button>
     </section>
 
     <section id="foundScreen" class="screen hidden found-screen">
-      <div class="treasure-mark">✦</div>
-      <h1>Found it</h1>
-      <p class="found-copy">What you seek, you have found.</p>
-      <p id="foundDistance" class="distance"></p>
+      <div class="parchment-card found-card">
+        <div class="treasure-mark">✦</div>
+        <h1>You found it!</h1>
+        <p class="found-copy">What you seek, you have found.</p>
+        <p id="foundDistance" class="distance found-distance"></p>
+      </div>
     </section>
 
     <section id="errorScreen" class="screen hidden">
-      <h1>Cannot start</h1>
-      <p id="errorMessage"></p>
+      <div class="parchment-card error-card">
+        <h1>Cannot start</h1>
+        <p id="errorMessage"></p>
+      </div>
     </section>
   </main>
 
