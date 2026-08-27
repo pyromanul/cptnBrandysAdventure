@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1217" />
+  <title>Captain Brandy's Compass</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app" aria-live="polite">
+    <section id="startScreen" class="screen start-screen">
+      <div class="parchment-card">
+        <div class="eyebrow">Captain Brandy's Compass</div>
+        <img class="compass-mark" src="compass-mark.svg" alt="" aria-hidden="true" />
+        <h1>What do you seek?</h1>
+        <p id="targetSummary" class="muted"></p>
+        <button id="startButton" type="button">Follow the compass</button>
+        <p class="hint">Location and motion permissions are required.</p>
+      </div>
+    </section>
+
+    <section id="navScreen" class="screen hidden nav-screen">
+      <div class="small-title">Captain Brandy's Compass</div>
+      <div id="arrowWrap" class="arrow-wrap" aria-label="Direction to target">
+        <img class="compass-ghost" src="compass-mark.svg" alt="" aria-hidden="true" />
+        <div id="arrow" class="arrow" aria-hidden="true">▲</div>
+      </div>
+      <div id="distance" class="distance">—</div>
+      <div class="rule"><span>✦</span></div>
+      <div id="status" class="status">Acquiring position…</div>
+      <button id="recalibrateButton" class="secondary" type="button">Re-enable compass</button>
+    </section>
+
+    <section id="foundScreen" class="screen hidden found-screen">
+      <div class="treasure-mark">✦</div>
+      <h1>Found it</h1>
+      <p class="found-copy">What you seek, you have found.</p>
+      <p id="foundDistance" class="distance"></p>
+    </section>
+
+    <section id="errorScreen" class="screen hidden">
+      <h1>Cannot start</h1>
+      <p id="errorMessage"></p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

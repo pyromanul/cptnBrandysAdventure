@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Decorative compass">
+  <defs>
+    <radialGradient id="face" cx="50%" cy="42%" r="65%">
+      <stop offset="0" stop-color="#27313a"/>
+      <stop offset="1" stop-color="#0d1216"/>
+    </radialGradient>
+    <linearGradient id="brass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f1d28b"/>
+      <stop offset="0.45" stop-color="#a76b24"/>
+      <stop offset="1" stop-color="#e0b665"/>
+    </linearGradient>
+  </defs>
+  <circle cx="120" cy="120" r="108" fill="#14100b" stroke="url(#brass)" stroke-width="10"/>
+  <circle cx="120" cy="120" r="92" fill="url(#face)" stroke="#6f4b22" stroke-width="2"/>
+  <g stroke="#c99b52" stroke-width="2" opacity=".75">
+    <path d="M120 34v18M120 188v18M34 120h18M188 120h18"/>
+    <path d="M59 59l13 13M168 168l13 13M181 59l-13 13M72 168l-13 13"/>
+  </g>
+  <path d="M120 48l18 72-18-11-18 11z" fill="#d9b46a"/>
+  <path d="M120 192l-18-72 18 11 18-11z" fill="#6b271f"/>
+  <circle cx="120" cy="120" r="10" fill="#8f1e18" stroke="#edc777" stroke-width="4"/>
+</svg>
