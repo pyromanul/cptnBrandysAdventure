@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const FOUND_RADIUS_M = 6;
+  const FOUND_RADIUS_M = 3;
   const GPS_COURSE_MIN_DISTANCE_M = 4;
   const GPS_COURSE_MAX_AGE_MS = 12000;
 
