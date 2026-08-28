@@ -458,3 +458,109 @@ html, body {
   .distance-card { padding: 20px 38px 18px; }
   .treasure-strip { min-height: 62px; }
 }
+
+
+/* --- Final mobile layout refinements ----------------------------------- */
+
+/* The artwork itself is transparent. Do not paint or box-shadow its
+   rectangular CSS container; otherwise the transparent corners look beige. */
+.distance-card {
+  width: min(96vw, 440px);
+  min-height: clamp(168px, 42vw, 196px);
+  padding: clamp(36px, 9vw, 46px) 42px clamp(28px, 7vw, 36px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  background-color: transparent;
+  background-image: url("assets/parchment-panel.webp");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  filter: drop-shadow(0 7px 7px rgba(0, 0, 0, .30));
+  overflow: visible;
+}
+
+.distance-card::before,
+.distance-card::after {
+  content: none;
+  display: none;
+}
+
+.distance-label {
+  margin: 0;
+  line-height: 1.05;
+}
+
+.distance-card .distance {
+  margin: 2px 0 0;
+  line-height: .95;
+}
+
+.distance-ornament {
+  margin-top: 5px;
+}
+
+/* The detailed compass image is now the complete housing.  The old CSS
+   brass disk is deliberately removed so it cannot protrude around the PNG. */
+.compass-bezel {
+  width: 100%;
+  height: 100%;
+  padding: 8%;
+  border: 0;
+  border-radius: 50%;
+  background-color: transparent;
+  background-image: url("assets/compass-face.webp");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  box-shadow: none;
+  filter: drop-shadow(0 10px 10px rgba(0, 0, 0, .42));
+}
+
+.compass-face {
+  background: transparent;
+}
+
+/* Route artwork moves to the start screen and becomes the decorative
+   backing of the primary action rather than consuming navigation height. */
+.start-route-cta {
+  width: min(92vw, 370px);
+  min-height: 112px;
+  margin: 2px auto 0;
+  display: grid;
+  place-items: center;
+  background: url("assets/treasure-route.webp") center / contain no-repeat;
+}
+
+.route-button {
+  min-width: 190px;
+  margin-top: 3px;
+  padding: 12px 23px;
+  border-color: #e0b55b;
+  background: linear-gradient(rgba(116, 21, 17, .96), rgba(72, 12, 11, .96));
+  box-shadow:
+    inset 0 0 0 2px rgba(59, 17, 8, .76),
+    0 3px 8px rgba(0, 0, 0, .28);
+}
+
+/* Old navigation route strip is intentionally retired. */
+.treasure-strip { display: none !important; }
+
+.nav-screen {
+  gap: 10px;
+}
+
+@media (max-height: 720px) {
+  .distance-card {
+    min-height: 148px;
+    padding: 30px 38px 24px;
+  }
+  .start-route-cta {
+    min-height: 92px;
+  }
+}

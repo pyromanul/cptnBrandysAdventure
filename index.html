@@ -16,7 +16,9 @@
         <img class="compass-mark" src="compass-mark.svg" alt="" aria-hidden="true" />
         <p class="tagline">Not all treasures are marked on maps.</p>
         <p id="targetSummary" class="muted"></p>
-        <button id="startButton" type="button">Follow the compass</button>
+        <div class="start-route-cta">
+          <button id="startButton" class="route-button" type="button">Follow the compass</button>
+        </div>
         <p class="hint">Location and motion permissions are required.</p>
       </div>
     </section>
@@ -50,11 +52,6 @@
 
       <div id="guidance" class="guidance">Keep going, Captain!</div>
 
-      <div class="treasure-strip" aria-hidden="true">
-        <span class="ship">⛵</span>
-        <span class="route">· · · · · · · · ·</span>
-        <span class="xmark">×</span>
-      </div>
 
       <div id="status" class="status">Acquiring position…</div>
       <button id="recalibrateButton" class="secondary" type="button">Re-enable compass</button>
