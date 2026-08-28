@@ -252,7 +252,7 @@ button.secondary {
   height: 72%;
   transform: translate(-50%, -50%) rotate(0deg);
   transform-origin: 50% 50%;
-  transition: transform 160ms ease-out;
+  transition: transform 110ms linear;
   will-change: transform;
   filter: drop-shadow(0 3px 3px rgba(0,0,0,.55));
 }
@@ -355,4 +355,106 @@ button.secondary {
 
 @media (prefers-reduced-motion: reduce) {
   .needle { transition: none; }
+}
+
+/* --- Illustrated pirate artwork layer -----------------------------------
+   All image assets are optional. If one fails to load, the existing CSS
+   gradients beneath it remain visible, so the game is still usable. */
+
+html, body {
+  background-image:
+    linear-gradient(180deg, rgba(2, 7, 12, .28), rgba(2, 7, 12, .62)),
+    url("assets/pirate-background.webp"),
+    radial-gradient(circle at 50% 18%, rgba(119, 85, 35, 0.14), transparent 30%),
+    linear-gradient(180deg, #101a20 0%, var(--ocean) 48%, var(--ocean-deep) 100%);
+  background-size: cover, cover, auto, auto;
+  background-position: center, center, center, center;
+  background-attachment: fixed, fixed, scroll, scroll;
+}
+
+.distance-card {
+  border: 0;
+  border-radius: 0;
+  background-image:
+    url("assets/parchment-panel.webp"),
+    linear-gradient(135deg, var(--parchment-light), var(--parchment));
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+  padding: 29px 44px 27px;
+  box-shadow: 0 12px 28px rgba(0,0,0,.32);
+}
+
+.distance-card::after { display: none; }
+
+.compass-bezel {
+  padding: 8%;
+  border: 0;
+  background-image:
+    url("assets/compass-face.webp"),
+    conic-gradient(from 15deg, #4c2c0d, #d1a34e, #6b4115, #e3bd67, #4f2e0e, #c18d37, #4c2c0d);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow: 0 12px 28px rgba(0,0,0,.48);
+}
+
+.compass-face {
+  overflow: visible;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+/* The illustrated compass already contains its rose, tick marks and labels. */
+.ticks, .cardinal, .rose { display: none; }
+
+.needle {
+  width: 17%;
+  height: 84%;
+  filter: drop-shadow(0 3px 3px rgba(0,0,0,.65));
+}
+
+.treasure-strip {
+  position: relative;
+  width: min(92vw, 430px);
+  min-height: 86px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background-image:
+    url("assets/treasure-route.webp"),
+    linear-gradient(135deg, #d8b878, #c69e5d);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow: none;
+}
+
+.treasure-strip > * { visibility: hidden; }
+
+.found-card {
+  padding-top: 24px;
+  background-image:
+    linear-gradient(rgba(231, 201, 143, .82), rgba(207, 165, 94, .88)),
+    url("assets/parchment-panel.webp"),
+    linear-gradient(135deg, var(--parchment-light), var(--parchment));
+  background-size: cover, 100% 100%, cover;
+  background-position: center;
+}
+
+.found-card::before {
+  content: "";
+  display: block;
+  width: min(65vw, 250px);
+  aspect-ratio: 1;
+  margin: -8px auto 4px;
+  background: url("assets/treasure-chest.webp") center / contain no-repeat;
+}
+
+.found-card .treasure-mark { display: none; }
+
+@media (max-height: 720px) {
+  .distance-card { padding: 20px 38px 18px; }
+  .treasure-strip { min-height: 62px; }
 }
