@@ -646,3 +646,77 @@ html, body {
     padding-block: 24px 20px;
   }
 }
+
+
+/* --- Final spacing pass ------------------------------------------------ */
+/* Stretch only vertically: preserve the parchment's natural width while
+   giving its opaque centre more usable height for the text. */
+.distance-card {
+  width: min(94vw, 430px);
+  min-height: clamp(205px, 52vw, 236px);
+  padding: clamp(54px, 13vw, 66px) 44px clamp(46px, 11vw, 56px);
+  background-size: 100% 126%;
+  background-position: center;
+  margin-top: -10px;
+  margin-bottom: -4px;
+}
+
+/* Recover the freed vertical room for the main compass. */
+.compass-shell {
+  width: min(91vw, 438px);
+  margin-top: -2px;
+}
+
+/* The route artwork itself is now the primary action. */
+.start-route-art { display: none !important; }
+
+.route-art-button {
+  width: min(90vw, 360px);
+  min-height: 105px;
+  margin: 3px auto 0;
+  padding: 0 24px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent url("assets/treasure-route.webp") center / contain no-repeat;
+  box-shadow: none;
+  filter: drop-shadow(0 5px 5px rgba(0,0,0,.24));
+  color: #52120f;
+  text-shadow: 0 1px 0 rgba(255, 224, 157, .45);
+}
+
+.route-art-button span {
+  display: inline-block;
+  padding: 8px 18px;
+  font-size: clamp(1.05rem, 4.7vw, 1.35rem);
+  font-weight: 800;
+  font-style: italic;
+  letter-spacing: .015em;
+  transform: translateY(1px);
+}
+
+.route-art-button:focus-visible {
+  outline: 3px solid #f0cd73;
+  outline-offset: 3px;
+}
+
+.start-card .hint {
+  margin-top: 6px;
+}
+
+@media (max-height: 720px) {
+  .distance-card {
+    min-height: 184px;
+    padding: 47px 40px 40px;
+    background-size: 100% 124%;
+    margin-top: -12px;
+  }
+  .compass-shell {
+    width: min(76vw, 360px);
+  }
+  .route-art-button {
+    min-height: 88px;
+    width: min(82vw, 330px);
+  }
+}
