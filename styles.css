@@ -720,3 +720,87 @@ html, body {
     width: min(82vw, 330px);
   }
 }
+
+
+/* --- Screenshot-tuned final pass --------------------------------------- */
+/* Navigation: keep the parchment subordinate to the compass and remove
+   the decorative line below the distance. */
+.distance-card {
+  width: min(90vw, 410px);
+  min-height: clamp(174px, 45vw, 202px);
+  padding: clamp(45px, 10.8vw, 54px) 40px clamp(38px, 9vw, 46px);
+  background-size: 100% 118%;
+  background-position: center;
+  margin-top: -14px;
+  margin-bottom: -8px;
+}
+
+.distance-card .distance {
+  font-size: clamp(2.7rem, 12.5vw, 4.35rem);
+  line-height: .96;
+}
+
+.distance-label {
+  font-size: clamp(1rem, 4.4vw, 1.38rem);
+}
+
+.distance-ornament { display: none !important; }
+
+/* With the smaller distance panel, give the compass the visual centre. */
+.compass-shell {
+  width: min(92vw, 445px);
+  margin-top: 0;
+}
+
+/* Start screen: button and route are deliberately separate.  Their order
+   is CTA first, then the route illustration, as requested. */
+.route-art-button { display: none !important; }
+
+.start-card .route-button {
+  display: inline-block;
+  min-width: 205px;
+  margin: 8px auto 3px;
+  padding: 12px 24px;
+  border: 1px solid #d2aa5c;
+  border-radius: 999px;
+  background: linear-gradient(#7c1715, #57100f);
+  color: #f6dfaa;
+  box-shadow: inset 0 0 0 2px rgba(59,17,8,.8), 0 4px 10px rgba(0,0,0,.26);
+  filter: none;
+  text-shadow: none;
+  font-size: clamp(1rem, 4.5vw, 1.2rem);
+  font-weight: 700;
+  font-style: normal;
+}
+
+.start-route-art {
+  display: block !important;
+  width: min(84vw, 340px);
+  aspect-ratio: 3.35 / 1;
+  margin: 3px auto 0;
+  background: url("assets/treasure-route.webp") center / contain no-repeat;
+  filter: drop-shadow(0 4px 4px rgba(0,0,0,.20));
+}
+
+.start-card .hint {
+  margin-top: 4px;
+}
+
+@media (max-height: 720px) {
+  .distance-card {
+    width: min(88vw, 395px);
+    min-height: 160px;
+    padding: 39px 36px 33px;
+    background-size: 100% 116%;
+    margin-top: -12px;
+  }
+  .distance-card .distance {
+    font-size: clamp(2.45rem, 11.5vw, 3.8rem);
+  }
+  .compass-shell {
+    width: min(78vw, 370px);
+  }
+  .start-route-art {
+    width: min(76vw, 300px);
+  }
+}
