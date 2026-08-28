@@ -291,7 +291,7 @@
     return;
   }
 
-  ui.targetSummary.textContent = "Target loaded";
+  if (ui.targetSummary) ui.targetSummary.textContent = "Target loaded";
   ui.startButton.addEventListener("click", start);
   ui.recalibrateButton.addEventListener("click", enableCompass);
 
