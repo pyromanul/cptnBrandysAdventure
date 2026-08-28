@@ -375,9 +375,8 @@ html, body {
 .distance-card {
   border: 0;
   border-radius: 0;
-  background-image:
-    url("assets/parchment-panel.webp"),
-    linear-gradient(135deg, var(--parchment-light), var(--parchment));
+  background-color: transparent;
+  background-image: url("assets/parchment-panel.webp");
   background-repeat: no-repeat;
   background-position: center;
   background-size: 100% 100%;
@@ -422,9 +421,8 @@ html, body {
   padding: 0;
   border: 0;
   border-radius: 0;
-  background-image:
-    url("assets/treasure-route.webp"),
-    linear-gradient(135deg, #d8b878, #c69e5d);
+  background-color: transparent;
+  background-image: url("assets/treasure-route.webp");
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
@@ -435,12 +433,14 @@ html, body {
 
 .found-card {
   padding-top: 24px;
-  background-image:
-    linear-gradient(rgba(231, 201, 143, .82), rgba(207, 165, 94, .88)),
-    url("assets/parchment-panel.webp"),
-    linear-gradient(135deg, var(--parchment-light), var(--parchment));
-  background-size: cover, 100% 100%, cover;
+  background-color: transparent;
+  background-image: url("assets/parchment-panel.webp");
+  background-size: 100% 100%;
   background-position: center;
+  background-repeat: no-repeat;
+  border: 0;
+  box-shadow: none;
+  overflow: visible;
 }
 
 .found-card::before {

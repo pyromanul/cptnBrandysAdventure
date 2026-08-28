@@ -32,6 +32,8 @@
     nativeCourseUpdatedAt: 0,
     watchId: null,
     started: false,
+    orientationEventName: null,
+    smoothedHeading: null,
   };
 
   function parseTarget() {
@@ -102,26 +104,47 @@
   }
 
   function getScreenCorrectedHeading(event) {
-    // iOS Safari provides a true compass heading directly.
-    if (typeof event.webkitCompassHeading === "number") {
+    // iOS Safari exposes a compass heading that is already referenced to north.
+    // Do NOT apply the screen-orientation correction to this value.
+    if (Number.isFinite(event.webkitCompassHeading)) {
       return normalize360(event.webkitCompassHeading);
     }
 
-    // On browsers exposing absolute alpha, alpha is rotation around the z axis.
-    // Convert it to compass convention and correct for screen orientation.
-    if (typeof event.alpha === "number") {
-      const screenAngle = screen.orientation?.angle ?? window.orientation ?? 0;
-      return normalize360(360 - event.alpha + screenAngle);
+    // For the standard API only accept absolute orientation data. Relative
+    // deviceorientation alpha is not a compass heading and can be offset by 90°.
+    if (event.absolute !== true || !Number.isFinite(event.alpha)) return null;
+
+    // alpha increases counter-clockwise relative to north, while CSS rotation is
+    // clockwise. Correct for portrait/landscape orientation exactly once.
+    const screenAngle = Number(screen.orientation?.angle ?? window.orientation ?? 0);
+    return normalize360(360 - event.alpha + screenAngle);
+  }
+
+  function smoothHeading(nextHeading) {
+    if (state.smoothedHeading === null) {
+      state.smoothedHeading = nextHeading;
+      return nextHeading;
     }
-    return null;
+
+    // Circular exponential smoothing. Using the shortest angular difference
+    // avoids jumps at 0/360° (e.g. 359° -> 1°).
+    const delta = normalize180(nextHeading - state.smoothedHeading);
+    const SMOOTHING = 0.22;
+    state.smoothedHeading = normalize360(state.smoothedHeading + delta * SMOOTHING);
+    return state.smoothedHeading;
   }
 
   function onOrientation(event) {
     const heading = getScreenCorrectedHeading(event);
-    if (heading !== null) {
-      state.deviceHeading = heading;
-      updateDisplay();
-    }
+    if (heading === null) return;
+    state.deviceHeading = smoothHeading(heading);
+    updateDisplay();
+  }
+
+  function removeOrientationListener() {
+    if (!state.orientationEventName) return;
+    window.removeEventListener(state.orientationEventName, onOrientation, true);
+    state.orientationEventName = null;
   }
 
   async function enableCompass() {
@@ -132,10 +155,19 @@
         if (permission !== "granted") throw new Error("Motion permission was not granted.");
       }
 
-      window.removeEventListener("deviceorientationabsolute", onOrientation);
-      window.removeEventListener("deviceorientation", onOrientation);
-      window.addEventListener("deviceorientationabsolute", onOrientation, true);
-      window.addEventListener("deviceorientation", onOrientation, true);
+      removeOrientationListener();
+      state.smoothedHeading = null;
+      state.deviceHeading = null;
+
+      // Never listen to both events simultaneously: on some Android devices
+      // they report headings in different reference frames, producing a ~90°
+      // flicker. Prefer the explicitly absolute event when the browser has it;
+      // iOS uses deviceorientation + webkitCompassHeading instead.
+      const eventName = ("ondeviceorientationabsolute" in window)
+        ? "deviceorientationabsolute"
+        : "deviceorientation";
+      state.orientationEventName = eventName;
+      window.addEventListener(eventName, onOrientation, true);
     } catch (err) {
       ui.status.textContent = "Compass unavailable; direction will use walking direction when possible.";
     }
@@ -265,7 +297,6 @@
 
   window.addEventListener("pagehide", () => {
     if (state.watchId !== null) navigator.geolocation.clearWatch(state.watchId);
-    window.removeEventListener("deviceorientationabsolute", onOrientation, true);
-    window.removeEventListener("deviceorientation", onOrientation, true);
+    removeOrientationListener();
   });
 })();
